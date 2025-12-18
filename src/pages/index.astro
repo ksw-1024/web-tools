@@ -1,70 +1,62 @@
 ---
+import Layout from '../layouts/Layout.astro';
 ---
 
-<html lang="ja">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Image Converter (JPG/PNG → WebP/AVIF)</title>
-	</head>
-	<body>
-		<main class="page">
-			<h1 class="title">Image Converter (JPG/PNG → WebP/AVIF)</h1>
-			<p class="subtitle">すべてブラウザ内で変換します（サーバーアップロードなし）。</p>
+<Layout>
+	<main class="page">
+		<h1 class="title">Image Converter (JPG/PNG → WebP/AVIF)</h1>
+		<p class="subtitle">すべてブラウザ内で変換します（サーバーアップロードなし）。</p>
 
-			<section class="card">
-				<div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="画像をドロップ または クリックして選択">
-					<div class="dropzone__inner">
-						<div class="dropzone__title">ここに JPG / PNG をドロップ（複数可）</div>
-						<div class="dropzone__or">または</div>
-						<button id="pickBtn" class="btn" type="button">ファイルを選択</button>
-						<input id="fileInput" class="sr-only" type="file" accept="image/jpeg,image/png" multiple />
-						<div id="fileMeta" class="meta" aria-live="polite"></div>
-					</div>
+		<section class="card">
+			<div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="画像をドロップ または クリックして選択">
+				<div class="dropzone__inner">
+					<div class="dropzone__title">ここに JPG / PNG をドロップ（複数可）</div>
+					<div class="dropzone__or">または</div>
+					<button id="pickBtn" class="btn" type="button">ファイルを選択</button>
+					<input id="fileInput" class="sr-only" type="file" accept="image/jpeg,image/png" multiple />
+					<div id="fileMeta" class="meta" aria-live="polite"></div>
 				</div>
+			</div>
 
-				<div class="controls">
-					<label class="field">
-						<span class="field__label">変換形式</span>
-						<select id="formatSelect" class="select">
-							<option value="webp">WebP</option>
-							<option value="avif">AVIF</option>
-						</select>
-					</label>
+			<div class="controls">
+				<label class="field">
+					<span class="field__label">変換形式</span>
+					<select id="formatSelect" class="select">
+						<option value="webp">WebP</option>
+						<option value="avif">AVIF</option>
+					</select>
+				</label>
 
-					<label class="field">
-						<span class="field__label">品質: <span id="qualityValue">80</span></span>
-						<input id="qualitySlider" type="range" min="0" max="100" value="80" />
-					</label>
+				<label class="field">
+					<span class="field__label">品質: <span id="qualityValue">80</span></span>
+					<input id="qualitySlider" type="range" min="0" max="100" value="80" />
+				</label>
 
-					<div class="buttons">
-						<button id="convertBtn" class="btn primary" type="button" disabled>一括変換</button>
-						<button id="downloadAllBtn" class="btn" type="button" disabled>一括ダウンロード（ZIP）</button>
-						<button id="clearBtn" class="btn" type="button" disabled>クリア</button>
-					</div>
+				<div class="buttons">
+					<button id="convertBtn" class="btn primary" type="button" disabled>一括変換</button>
+					<button id="downloadAllBtn" class="btn" type="button" disabled>一括ダウンロード（ZIP）</button>
+					<button id="clearBtn" class="btn" type="button" disabled>クリア</button>
 				</div>
+			</div>
 
-				<div class="grid">
-					<div class="panel">
-						<h2 class="panel__title">ファイル</h2>
-						<div id="fileList" class="filelist" aria-live="polite"></div>
-					</div>
-					<div class="panel">
-						<h2 class="panel__title">ステータス</h2>
-						<div id="status" class="status" aria-live="polite"></div>
-						<div id="error" class="error" role="alert"></div>
-					</div>
+			<div class="grid">
+				<div class="panel">
+					<h2 class="panel__title">ファイル</h2>
+					<div id="fileList" class="filelist" aria-live="polite"></div>
 				</div>
-			</section>
-		</main>
+				<div class="panel">
+					<h2 class="panel__title">ステータス</h2>
+					<div id="status" class="status" aria-live="polite"></div>
+					<div id="error" class="error" role="alert"></div>
+				</div>
+			</div>
+		</section>
+	</main>
 
-		<script>
-			import '../scripts/converter.ts';
-		</script>
-	</body>
-</html>
+	<script>
+		import '../scripts/converter.ts';
+	</script>
+</Layout>
 
 <style is:global>
 	:root {
@@ -88,8 +80,6 @@
 		margin: 0;
 		font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
 			"Segoe UI Emoji";
-		background: radial-gradient(1200px 800px at 20% -10%, rgba(37, 99, 235, 0.14), transparent 60%),
-			radial-gradient(1000px 700px at 90% 10%, rgba(14, 165, 233, 0.12), transparent 55%), var(--bg);
 		color: var(--text);
 	}
 

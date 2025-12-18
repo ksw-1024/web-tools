@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
+import tailwindcss from '@tailwindcss/vite';
+
 // https://astro.build/config
 export default defineConfig({
   // Deploying under a subpath (e.g. https://example.com/c-img/) requires setting a base.
@@ -10,11 +12,14 @@ export default defineConfig({
   output: 'static',
 
   vite: {
-      optimizeDeps: {
-          exclude: ['@jsquash/avif'],
-      },
-      worker: {
-          format: 'es',
-      },
-	},
+    optimizeDeps: {
+        exclude: ['@jsquash/avif'],
+    },
+
+    worker: {
+        format: 'es',
+    },
+
+    plugins: [tailwindcss()],
+  },
 });
