@@ -7,17 +7,17 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   // Deploying under a subpath (e.g. https://example.com/c-img/) requires setting a base.
   // Example: ASTRO_BASE="/c-img/" pnpm build
-  base: process.env.ASTRO_BASE || '/',
+  base: process.env.ASTRO_BASE || '/c-img/',
   site: process.env.ASTRO_SITE,
   output: 'static',
 
   vite: {
     optimizeDeps: {
-        exclude: ['@jsquash/avif'],
+      exclude: ['@jsquash/avif'],
     },
 
     worker: {
-        format: 'es',
+      format: 'es',
     },
 
     plugins: [tailwindcss()],
