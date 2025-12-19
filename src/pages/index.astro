@@ -3,52 +3,54 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<main class="max-w-[980px] mx-auto px-4 py-10 pb-16">
-		<h1 class="m-0 mb-2 text-[32px] font-extrabold tracking-tight text-[var(--accent)]">画像変換 (JPG/PNG → WebP/AVIF)</h1>
-		<p class="m-0 mb-7 text-[var(--text-soft)] text-sm font-medium">すべてローカルで変換しています。サーバーへの画像データ送信はありません。</p>
+	<main class="max-w-4xl mx-auto px-6 py-12">
+		<h1 class="text-2xl font-normal mb-12 text-[var(--text)]">画像変換</h1>
 
-		<section class="bg-[var(--card)] border-2 border-[var(--border)] rounded-xl p-6 shadow-sm">
-			<div id="dropzone" class="border-2 border-dashed border-[var(--border-strong)] rounded-lg p-6 bg-[var(--bg)] cursor-pointer outline-none transition-all duration-200 hover:border-[var(--accent)] hover:bg-[#fafafa] focus-visible:border-[var(--accent)] focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.1)]" role="button" tabindex="0" aria-label="画像をドロップ または クリックして選択">
-				<div class="grid gap-3 justify-items-start">
-					<div class="font-bold text-[15px] text-[var(--text)]">ここに JPG / PNG をドロップ（複数可）</div>
-					<div class="text-[var(--muted)] text-xs font-medium">または</div>
-					<button id="pickBtn" class="appearance-none border-2 border-[var(--border)] bg-[var(--card)] text-[var(--text)] px-5 py-3 rounded-md cursor-pointer font-bold text-sm transition-all duration-200 hover:enabled:bg-[var(--bg)] hover:enabled:border-[var(--border-strong)] disabled:opacity-40 disabled:cursor-not-allowed" type="button">ファイルを選択</button>
-					<input id="fileInput" class="absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0" style="clip: rect(0, 0, 0, 0);" type="file" accept="image/jpeg,image/png" multiple />
-					<div id="fileMeta" class="text-[var(--muted)] text-xs font-medium" aria-live="polite"></div>
+		<section>
+			<div id="dropzone" class="border-2 border-dashed border-[var(--border)] rounded-lg p-16 cursor-pointer outline-none transition-colors hover:border-[var(--text)] text-center" role="button" tabindex="0" aria-label="画像をドロップ または クリックして選択">
+				<svg class="w-12 h-12 mx-auto mb-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+				</svg>
+				<div class="text-base text-[var(--muted)]">画像をドロップ</div>
+				<input id="fileInput" class="absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0" style="clip: rect(0, 0, 0, 0);" type="file" accept="image/jpeg,image/png" multiple />
+				<div id="fileMeta" class="text-sm text-[var(--muted)] mt-3" aria-live="polite"></div>
+			</div>
+			<button id="pickBtn" class="hidden" type="button"></button>
+
+			<div class="mt-8 flex flex-wrap items-center gap-6">
+				<select id="formatSelect" class="border border-[var(--border)] rounded px-4 py-2 text-sm cursor-pointer bg-white">
+					<option value="webp">WebP</option>
+					<option value="avif">AVIF</option>
+				</select>
+				<div class="flex items-center gap-3">
+					<span class="text-sm text-[var(--muted)]">品質</span>
+					<input id="qualitySlider" type="range" min="0" max="100" value="80" class="w-32 h-1 bg-transparent cursor-pointer appearance-none" />
+					<span id="qualityValue" class="text-sm text-[var(--text)] w-8">80</span>
 				</div>
+				<button id="convertBtn" class="flex items-center gap-2 border border-[var(--text)] bg-[var(--text)] text-white px-6 py-2 rounded text-sm hover:enabled:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity" type="button" disabled>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+					</svg>
+					変換
+				</button>
+				<button id="downloadAllBtn" class="flex items-center gap-2 border border-[var(--border)] px-6 py-2 rounded text-sm hover:enabled:border-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" type="button" disabled>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+					</svg>
+					ZIP
+				</button>
+				<button id="clearBtn" class="flex items-center gap-2 text-sm text-[var(--muted)] hover:enabled:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" type="button" disabled>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+					</svg>
+					クリア
+				</button>
 			</div>
 
-			<div class="mt-5 pt-5 border-t-2 border-[var(--border)] grid gap-4">
-				<label class="grid gap-2">
-					<span class="text-[var(--text)] text-[13px] font-bold">変換形式</span>
-					<select id="formatSelect" class="w-full bg-[var(--card)] text-[var(--text)] border-2 border-[var(--border)] rounded-md px-[14px] py-[11px] font-semibold cursor-pointer transition-[border-color] duration-200 hover:border-[var(--border-strong)] focus:outline-none focus:border-[var(--accent)]">
-						<option value="webp">WebP</option>
-						<option value="avif">AVIF</option>
-					</select>
-				</label>
-
-				<label class="grid gap-2">
-					<span class="text-[var(--text)] text-[13px] font-bold">品質: <span id="qualityValue">80</span></span>
-					<input id="qualitySlider" type="range" min="0" max="100" value="80" class="w-full h-2 bg-transparent cursor-pointer appearance-none" />
-				</label>
-
-				<div class="flex flex-wrap gap-3">
-					<button id="convertBtn" class="appearance-none border-2 px-5 py-3 rounded-md cursor-pointer font-bold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-[var(--accent)] text-[var(--card)] border-[var(--accent)] hover:enabled:bg-[var(--accent-soft)] hover:enabled:border-[var(--accent-soft)]" type="button" disabled>一括変換</button>
-					<button id="downloadAllBtn" class="appearance-none border-2 border-[var(--border)] bg-[var(--card)] text-[var(--text)] px-5 py-3 rounded-md cursor-pointer font-bold text-sm transition-all duration-200 hover:enabled:bg-[var(--bg)] hover:enabled:border-[var(--border-strong)] disabled:opacity-40 disabled:cursor-not-allowed" type="button" disabled>一括ダウンロード（ZIP）</button>
-					<button id="clearBtn" class="appearance-none border-2 border-[var(--border)] bg-[var(--card)] text-[var(--text)] px-5 py-3 rounded-md cursor-pointer font-bold text-sm transition-all duration-200 hover:enabled:bg-[var(--bg)] hover:enabled:border-[var(--border-strong)] disabled:opacity-40 disabled:cursor-not-allowed" type="button" disabled>クリア</button>
-				</div>
-			</div>
-
-			<div class="mt-5 pt-5 border-t-2 border-[var(--border)] grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-4">
-				<div class="border-2 border-[var(--border)] rounded-lg p-4 bg-[var(--bg)]">
-					<h2 class="m-0 mb-[14px] text-xs text-[var(--text)] font-extrabold uppercase tracking-wider">ファイル</h2>
-					<div id="fileList" class="grid gap-[10px]" aria-live="polite"></div>
-				</div>
-				<div class="border-2 border-[var(--border)] rounded-lg p-4 bg-[var(--bg)]">
-					<h2 class="m-0 mb-[14px] text-xs text-[var(--text)] font-extrabold uppercase tracking-wider">ステータス</h2>
-					<div id="status" class="text-[13px] text-[var(--text-soft)] font-medium leading-relaxed whitespace-pre-wrap break-words" aria-live="polite"></div>
-					<div id="error" class="mt-3 p-3 text-[13px] font-semibold text-[var(--danger)] whitespace-pre-wrap bg-[rgba(220,38,38,0.05)] border-2 border-[rgba(220,38,38,0.2)] rounded-md" role="alert"></div>
-				</div>
+			<div class="mt-12">
+				<div id="fileList" class="grid gap-4" aria-live="polite"></div>
+				<div id="status" class="text-sm text-[var(--muted)] mt-6" aria-live="polite"></div>
+				<div id="error" class="text-sm text-[var(--danger)] mt-4" role="alert"></div>
 			</div>
 		</section>
 	</main>
@@ -61,62 +63,48 @@ import Layout from '../layouts/Layout.astro';
 <style>
 	/* Range Slider */
 	input[type="range"]::-webkit-slider-track {
-		height: 8px;
+		height: 2px;
 		background: var(--border);
-		border-radius: 4px;
-		border: 2px solid var(--border-strong);
+		border-radius: 1px;
 	}
 
 	input[type="range"]::-moz-range-track {
-		height: 8px;
+		height: 2px;
 		background: var(--border);
-		border-radius: 4px;
-		border: 2px solid var(--border-strong);
+		border-radius: 1px;
 	}
 
 	input[type="range"]::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
-		width: 24px;
-		height: 24px;
-		background: var(--accent);
-		border: 3px solid var(--card);
+		width: 14px;
+		height: 14px;
+		background: var(--text);
 		border-radius: 50%;
-		box-shadow: 0 0 0 2px var(--accent);
 		cursor: pointer;
-		transition: transform 0.2s;
 	}
 
 	input[type="range"]::-moz-range-thumb {
-		width: 24px;
-		height: 24px;
-		background: var(--accent);
-		border: 3px solid var(--card);
+		width: 14px;
+		height: 14px;
+		background: var(--text);
 		border-radius: 50%;
-		box-shadow: 0 0 0 2px var(--accent);
+		border: none;
 		cursor: pointer;
-		transition: transform 0.2s;
-	}
-
-	input[type="range"]::-webkit-slider-thumb:hover {
-		transform: scale(1.15);
-	}
-
-	input[type="range"]::-moz-range-thumb:hover {
-		transform: scale(1.15);
-	}
-
-	input[type="range"]::-webkit-slider-thumb:active {
-		transform: scale(1.05);
-	}
-
-	input[type="range"]::-moz-range-thumb:active {
-		transform: scale(1.05);
 	}
 
 	#dropzone.is-dragover {
-		background: #ffffff;
-		border-color: var(--accent);
-		box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+		border-color: var(--text);
+		background: var(--bg);
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.animate-spin {
+		animation: spin 1s linear infinite;
 	}
 </style>

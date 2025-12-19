@@ -297,7 +297,7 @@ function main() {
 		fileInput.disabled = next;
 		formatSelect.disabled = next;
 		qualitySlider.disabled = next;
-		if (next) setText(statusEl, '変換中…');
+		if (next) setText(statusEl, '変換中');
 		// The per-item buttons are rendered dynamically; re-render when busy state changes
 		// so "ダウンロード" becomes clickable after conversion completes.
 		render();
@@ -338,11 +338,11 @@ function main() {
 		if (isBusy) return;
 		if (items.length === 0) {
 			setText(fileMeta, '');
-			setText(statusEl, '画像を選択してください');
+			setText(statusEl, '');
 			return;
 		}
-		setText(fileMeta, `${items.length} 枚 / 合計 ${formatBytes(totalBytes())}`);
-		setText(statusEl, '準備OK');
+		setText(fileMeta, `${items.length}枚`);
+		setText(statusEl, '');
 	}
 
 	function render() {
@@ -354,59 +354,123 @@ function main() {
 		fileList.replaceChildren();
 		for (const item of items) {
 			const row = document.createElement('div');
-			row.className = 'grid grid-cols-[90px_1fr] gap-3 p-3 border-2 border-[var(--border)] rounded-md bg-[var(--card)]';
+			row.className = 'border border-[var(--border)] rounded-lg p-4';
+
+			const container = document.createElement('div');
+			container.className = 'flex gap-4';
 
 			const thumb = document.createElement('div');
-			thumb.className = 'w-[90px] h-16 rounded border-2 border-[var(--border)] bg-[var(--bg)] grid place-items-center overflow-hidden';
+			thumb.className = 'w-24 h-24 rounded border border-[var(--border)] overflow-hidden shrink-0 bg-[var(--bg)] relative';
 			const img = document.createElement('img');
 			img.alt = item.file.name;
 			img.src = item.inputUrl;
-			img.className = 'w-full h-full object-cover block';
+			img.className = 'w-full h-full object-cover';
 			thumb.appendChild(img);
 
-			const meta = document.createElement('div');
-			meta.className = 'grid gap-2';
+			// Status icon overlay
+			const statusIcon = document.createElement('div');
+			statusIcon.className = 'absolute inset-0 flex items-center justify-center bg-black bg-opacity-50';
+			if (item.status === 'converting') {
+				statusIcon.innerHTML = '<svg class="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+				thumb.appendChild(statusIcon);
+			} else if (item.status === 'done') {
+				statusIcon.innerHTML = '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+				thumb.appendChild(statusIcon);
+			} else if (item.status === 'error') {
+				statusIcon.innerHTML = '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+				thumb.appendChild(statusIcon);
+			}
+
+			const content = document.createElement('div');
+			content.className = 'flex-1 min-w-0 flex flex-col justify-between';
+
+			const info = document.createElement('div');
+
+			const nameRow = document.createElement('div');
+			nameRow.className = 'flex items-center gap-2 mb-2';
 
 			const name = document.createElement('div');
-			name.className = 'font-extrabold text-[13px] leading-tight break-words text-[var(--text)]';
+			name.className = 'text-sm text-[var(--text)] truncate flex-1';
 			name.textContent = item.file.name;
 
+			// Status badge
+			const badge = document.createElement('div');
+			badge.className = 'shrink-0 px-2 py-0.5 rounded text-xs';
+			if (item.status === 'converting') {
+				badge.className += ' bg-blue-100 text-blue-700';
+				badge.textContent = '変換中';
+			} else if (item.status === 'done') {
+				badge.className += ' bg-green-100 text-green-700';
+				badge.textContent = '完了';
+			} else if (item.status === 'error') {
+				badge.className += ' bg-red-100 text-red-700';
+				badge.textContent = 'エラー';
+			} else {
+				badge.className += ' bg-gray-100 text-gray-700';
+				badge.textContent = '待機中';
+			}
+
+			nameRow.appendChild(name);
+			nameRow.appendChild(badge);
+
 			const sub = document.createElement('div');
-			sub.className = 'text-[var(--text-soft)] text-xs font-medium whitespace-pre-wrap break-words';
-			const lines: string[] = [];
-			lines.push(`入力: ${formatBytes(item.file.size)} (${item.file.type || 'unknown'})`);
-			if (item.status === 'converting') lines.push('状態: 変換中…');
-			if (item.status === 'ready') lines.push('状態: 未変換');
-			if (item.status === 'done') lines.push(`出力: ${formatBytes(item.outputSize ?? 0)} (${item.outputMime ?? 'unknown'})`);
-			if (item.status === 'error') lines.push(`エラー: ${item.error ?? '変換に失敗しました。'}`);
-			sub.textContent = lines.join('\n');
+			sub.className = 'text-sm text-[var(--muted)] mb-2';
+			if (item.status === 'done') {
+				sub.textContent = `${formatBytes(item.file.size)} → ${formatBytes(item.outputSize ?? 0)}`;
+			} else {
+				sub.textContent = formatBytes(item.file.size);
+			}
+
+			// Progress bar for done items
+			if (item.status === 'done' && item.outputSize) {
+				const progressContainer = document.createElement('div');
+				progressContainer.className = 'w-full bg-gray-200 rounded-full h-1.5 mb-2';
+				const progressBar = document.createElement('div');
+				const reduction = Math.max(0, Math.min(100, ((item.file.size - item.outputSize) / item.file.size) * 100));
+				progressBar.className = 'bg-green-600 h-1.5 rounded-full transition-all duration-300';
+				progressBar.style.width = `${reduction}%`;
+				progressContainer.appendChild(progressBar);
+				
+				const reductionText = document.createElement('div');
+				reductionText.className = 'text-xs text-green-600 mt-1';
+				reductionText.textContent = `${reduction.toFixed(0)}% 削減`;
+				
+				info.appendChild(nameRow);
+				info.appendChild(sub);
+				info.appendChild(progressContainer);
+				info.appendChild(reductionText);
+			} else {
+				info.appendChild(nameRow);
+				info.appendChild(sub);
+			}
 
 			const actions = document.createElement('div');
-			actions.className = 'flex flex-wrap gap-2';
+			actions.className = 'flex gap-2 mt-3';
 
 			const convertOneBtn = document.createElement('button');
 			convertOneBtn.type = 'button';
-			convertOneBtn.className = 'appearance-none border-2 px-3 py-2 rounded-md cursor-pointer font-bold text-xs transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-[var(--accent)] text-[var(--card)] border-[var(--accent)] hover:enabled:bg-[var(--accent-soft)] hover:enabled:border-[var(--accent-soft)]';
-			convertOneBtn.textContent = '変換';
+			convertOneBtn.className = 'flex items-center gap-1.5 border border-[var(--border)] px-4 py-1.5 rounded text-sm hover:enabled:border-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors';
+			convertOneBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg><span>変換</span>';
 			convertOneBtn.disabled = isBusy;
 			convertOneBtn.addEventListener('click', () => void convertOne(item.id));
 
 			const dlBtn = document.createElement('button');
 			dlBtn.type = 'button';
-			dlBtn.className = 'appearance-none border-2 border-[var(--border)] bg-[var(--card)] text-[var(--text)] px-3 py-2 rounded-md cursor-pointer font-bold text-xs transition-all duration-200 hover:enabled:bg-[var(--bg)] hover:enabled:border-[var(--border-strong)] disabled:opacity-40 disabled:cursor-not-allowed';
-			dlBtn.textContent = 'ダウンロード';
+			dlBtn.className = 'flex items-center gap-1.5 border border-[var(--border)] px-4 py-1.5 rounded text-sm hover:enabled:border-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors';
+			dlBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg><span>ダウンロード</span>';
 			dlBtn.disabled = isBusy || !item.outputBlob;
 			dlBtn.addEventListener('click', () => void download(item.id));
 
 			actions.appendChild(convertOneBtn);
 			actions.appendChild(dlBtn);
 
-			meta.appendChild(name);
-			meta.appendChild(sub);
-			meta.appendChild(actions);
+			content.appendChild(info);
+			content.appendChild(actions);
 
-			row.appendChild(thumb);
-			row.appendChild(meta);
+			container.appendChild(thumb);
+			container.appendChild(content);
+
+			row.appendChild(container);
 			fileList.appendChild(row);
 		}
 	}
