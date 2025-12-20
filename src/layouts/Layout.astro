@@ -2,12 +2,46 @@
 import "../styles/global.css";
 
 const base = import.meta.env.BASE_URL;
+const {
+    title: pageTitle,
+    description: pageDescription,
+    image: pageImage,
+    noindex,
+    twitter: twitterHandle,
+    siteName: pageSiteName,
+    themeColor: pageThemeColor,
+} = Astro.props as Record<string, string | boolean | undefined>;
+
+const title = (pageTitle as string) ?? "WebP/AVIFに変換しよう";
+const description =
+    (pageDescription as string) ??
+    "JPEG/PNG画像をWebPやAVIFへブラウザで簡単変換。品質も選べて、まとめてダウンロードできます。";
+const socialImage = (pageImage as string) ?? `${base}favicon/android-chrome-512x512.png`;
+const siteName = (pageSiteName as string) ?? "AVIF/WebP Converter";
+const themeColor = (pageThemeColor as string) ?? "#f3f4f6";
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const shouldIndex = !(noindex === true);
+const twitter = (twitterHandle as string) ?? "@ksw1024_studio";
+const author = "かすわら / Kaito Saida";
 ---
 
 <html lang="ja">
 	<head>
 		<meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Primary Meta -->
+    <meta name="description" content={description} />
+    <meta name="robots" content={shouldIndex ? "index,follow" : "noindex,nofollow"} />
+    <meta name="application-name" content={siteName} />
+    <meta name="apple-mobile-web-app-title" content={siteName} />
+    <meta name="theme-color" content={themeColor} />
+    <meta name="color-scheme" content="light" />
+    <meta name="author" content={author} />
+    {canonical && <link rel="canonical" href={canonical} />}
 
         <!-- Google Font -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,9 +94,22 @@ const base = import.meta.env.BASE_URL;
         <link rel="icon" type="image/png" sizes="32x32" href={`${base}favicon/icon-32x32.png`}>
         <link rel="manifest" href={`${base}favicon/manifest.json`}>
 
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>WebP/AVIFに変換しよう</title>
+        <!-- Open Graph -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        {canonical && <meta property="og:url" content={canonical} />}
+        <meta property="og:image" content={socialImage} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:locale" content="ja_JP" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={socialImage} />
+        <meta name="twitter:site" content={twitter} />
+        <meta name="twitter:creator" content={twitter} />
 	</head>
 	<body>
         <slot />
