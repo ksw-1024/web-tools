@@ -2,7 +2,6 @@ import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile } from '@ffmpeg/util';
 import coreURL from '@ffmpeg/core?url';
 import wasmURL from '@ffmpeg/core/wasm?url';
-import classWorkerURL from '@ffmpeg/ffmpeg/worker?url';
 
 type OutputFormat = 'mp4' | 'webm';
 
@@ -129,6 +128,7 @@ function main() {
 	let activeIndex = 0;
 	let activeTotal = 0;
 	let activeName = '';
+	let ffmpegObjectUrls: string[] = [];
 
 	function setStatus(message: string) {
 		setText(statusEl, message);
@@ -310,7 +310,43 @@ function main() {
 		if (ffmpegLoading) return ffmpegLoading;
 		setStatus('FFmpegを準備しています');
 		ffmpegLoading = (async () => {
-			await ffmpeg.load({ coreURL, wasmURL, classWorkerURL });
+			// ダウンロード進捗を表示しながら core/wasm を取得してから読み込む
+			const fetchWithProgress = async (url: string, label: string) => {
+				const res = await fetch(url);
+				if (!res.ok || !res.body) throw new Error(`Failed to fetch ${label}`);
+				const contentLength = Number(res.headers.get('Content-Length') ?? 0);
+				const reader = res.body.getReader();
+				const chunks: BlobPart[] = [];
+				let received = 0;
+				activeIndex = 0;
+				activeTotal = 0;
+				activeName = `${label} をダウンロード中`;
+				setProgress(0);
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					if (value) {
+						chunks.push(value);
+						received += value.length;
+						if (contentLength > 0) {
+							setProgress(Math.min(0.99, received / contentLength));
+						}
+					}
+				}
+
+				const blob = new Blob(chunks, { type: res.headers.get('Content-Type') ?? 'application/octet-stream' });
+				const objectUrl = URL.createObjectURL(blob);
+				ffmpegObjectUrls.push(objectUrl);
+				return objectUrl;
+			};
+
+			const coreObjectURL = await fetchWithProgress(coreURL, 'ffmpeg core');
+			const wasmObjectURL = await fetchWithProgress(wasmURL, 'ffmpeg wasm');
+			setStatus('FFmpegを初期化しています');
+			setProgress(0.99);
+			await ffmpeg.load({ coreURL: coreObjectURL, wasmURL: wasmObjectURL });
+			setProgress(1);
 			ffmpegLoaded = true;
 		})();
 		try {
@@ -320,6 +356,9 @@ function main() {
 			setError('FFmpegの読み込みに失敗しました。');
 			throw err;
 		} finally {
+			for (const url of ffmpegObjectUrls) URL.revokeObjectURL(url);
+			ffmpegObjectUrls = [];
+			setProgress(null);
 			ffmpegLoading = null;
 		}
 	}
@@ -391,7 +430,7 @@ function main() {
 			await ffmpeg.exec(args);
 			const data = await ffmpeg.readFile(outputName);
 			const mime = getOutputMime(format);
-			const blob = new Blob([data.buffer], { type: mime });
+			const blob = new Blob([data], { type: mime });
 
 			item.outputBlob = blob;
 			item.outputMime = mime;
