@@ -46,6 +46,30 @@ function setText(el: Element, text: string) {
 	el.textContent = text;
 }
 
+async function readVideoMetadata(file: File): Promise<{ width: number; height: number }> {
+	return await new Promise((resolve, reject) => {
+		const video = document.createElement('video');
+		video.preload = 'metadata';
+		const url = URL.createObjectURL(file);
+		const cleanup = () => {
+			URL.revokeObjectURL(url);
+			video.removeAttribute('src');
+			video.load();
+		};
+		video.onloadedmetadata = () => {
+			const width = video.videoWidth || 0;
+			const height = video.videoHeight || 0;
+			cleanup();
+			resolve({ width, height });
+		};
+		video.onerror = () => {
+			cleanup();
+			reject(new Error('Failed to read metadata'));
+		};
+		video.src = url;
+	});
+}
+
 async function saveBlob(blob: Blob, filename: string) {
 	const w = window as unknown as {
 		showSaveFilePicker?: (opts: {
@@ -416,7 +440,7 @@ function main() {
 	async function convertOneInternal(item: Item, index: number, total: number) {
 		await loadFfmpeg();
 		const format = getOutputFormat();
-		const targetHeight = getTargetHeight();
+		let targetHeight = getTargetHeight();
 		const outputExt = format === 'mp4' ? 'mp4' : 'webm';
 		const outputName = `output-${item.id}.${outputExt}`;
 		const mountDir = `/input-${item.id}`;
@@ -427,10 +451,37 @@ function main() {
 		render();
 
 		try {
+			if (format === 'webm' && !targetHeight) {
+				try {
+					const meta = await readVideoMetadata(item.file);
+					if (meta.height > 720) targetHeight = 720;
+				} catch {
+					// ignore metadata errors and keep original size
+				}
+			}
+
 			const inputPath = await mountInputFile(item.file, mountDir);
 			const args: string[] = ['-i', inputPath];
 			if (targetHeight) {
 				args.push('-vf', `scale=-2:${targetHeight}`);
+			}
+			if (format === 'webm') {
+				args.push(
+					'-c:v',
+					'libvpx',
+					'-b:v',
+					'1M',
+					'-deadline',
+					'realtime',
+					'-cpu-used',
+					'6',
+					'-threads',
+					'1',
+					'-c:a',
+					'libopus',
+					'-b:a',
+					'96k',
+				);
 			}
 			args.push(outputName);
 			await ffmpeg.exec(args);
